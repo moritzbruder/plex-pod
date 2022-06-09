@@ -10,14 +10,14 @@ from art import tprint
 
 from song_repo import SongRepo
 
-config = json.loads(open("./plex_pod_config.json", "r").read())
+config = json.loads(open("/etc/plex-pod.json", "r").read())
 
 plex = PlexServer(config["server"]["url"], config["server"]["token"])
 
 scheduler = BlockingScheduler()
 repo = SongRepo()
 
-tprint("Plex-Pod")
+tprint("plex-pod")
 
 print("Using server \"" + plex.friendlyName + "\"")
 
@@ -53,7 +53,7 @@ def find_song_ids_to_remove():
     return [track for track in existing_song_keys if track not in playlist_song_keys]
 
 
-@scheduler.scheduled_job(IntervalTrigger(seconds=config.get("syncIntervalSeconds", 6 * 60 * 60)))
+@scheduler.scheduled_job(IntervalTrigger(seconds=config.get("syncIntervalSeconds", 15 * 60)))
 def sync_from_plex():
     print("\n\n============================================\nStarting sync at", datetime.now())
 
@@ -78,7 +78,7 @@ def sync_from_plex():
     songs_to_dl = find_songs_to_download()
     for track in songs_to_dl:
         dl_count += 1
-        print("-- Downloading track ", dl_count, " of ", len(songs_to_dl))
+        print("-- Downloading track", dl_count, "of", len(songs_to_dl), ": ", track.title, "by", track.album().artist().title)
         key = track.ratingKey
         fname = "./.plex-pod-lib/" + str(key) + ".mp3"
         if track.thumb is not None:
