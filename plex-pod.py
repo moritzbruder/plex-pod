@@ -56,8 +56,6 @@ def find_song_ids_to_remove():
 
 
 def sync_tracks_from_plex():
-    print("\n\n============================================\nStarting sync at", datetime.now())
-
     dl_dir = "./.plex-pod-lib/.downloading"
     os.makedirs(name=dl_dir, exist_ok=True)
     dl_count = 0
@@ -96,16 +94,24 @@ def sync_tracks_from_plex():
     if len(songs_to_dl) == 0:
         print("-- No songs to download")
 
-    print("- Sync completed.\n============================================\n")
 
 
 @scheduler.scheduled_job(IntervalTrigger(seconds=config.get("syncIntervalSeconds", 15 * 60)))
 def scheduled_syncs():
+    print("\n\n============================================\n")
     ipods = ipod_manager.get_ipods()
     if len(ipods) > 0:
-        print("There is an iPod connected!")
+        ipod = ipods[0]
+        print("Starting iPod-Sync at", datetime.now())
+        ipod_manager.mount_ipod(ipod)
+        # todo run sync in py2.7
+        ipod_manager.unmount_ipod()
+        print("- iPod-Sync completed at", datetime.now())
     else:
+        print("Starting Plex-Sync at", datetime.now())
         sync_tracks_from_plex()
+        print("- Plex-Sync completed at", datetime.now())
+    print("\n============================================\n")
 
 
 scheduler.start()
