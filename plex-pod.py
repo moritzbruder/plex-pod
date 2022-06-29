@@ -9,6 +9,7 @@ from datetime import datetime
 from art import tprint
 
 from song_repo import SongRepo
+from ipod_fs import IpodDevice, IpodManager
 
 config = json.loads(open("/etc/plex-pod.json", "r").read())
 
@@ -16,6 +17,7 @@ plex = PlexServer(config["server"]["url"], config["server"]["token"])
 
 scheduler = BlockingScheduler()
 repo = SongRepo()
+ipod_manager = IpodManager('/mnt/plex_pod_mountpoint')
 
 tprint("plex-pod")
 
@@ -53,8 +55,7 @@ def find_song_ids_to_remove():
     return [track for track in existing_song_keys if track not in playlist_song_keys]
 
 
-@scheduler.scheduled_job(IntervalTrigger(seconds=config.get("syncIntervalSeconds", 15 * 60)))
-def sync_from_plex():
+def sync_tracks_from_plex():
     print("\n\n============================================\nStarting sync at", datetime.now())
 
     dl_dir = "./.plex-pod-lib/.downloading"
@@ -78,7 +79,8 @@ def sync_from_plex():
     songs_to_dl = find_songs_to_download()
     for track in songs_to_dl:
         dl_count += 1
-        print("-- Downloading track", dl_count, "of", len(songs_to_dl), ": ", track.title, "by", track.album().artist().title)
+        print("-- Downloading track", dl_count, "of", len(songs_to_dl), ": ", track.title, "by",
+              track.album().artist().title)
         key = track.ratingKey
         fname = "./.plex-pod-lib/" + str(key) + ".mp3"
         if track.thumb is not None:
@@ -95,6 +97,15 @@ def sync_from_plex():
         print("-- No songs to download")
 
     print("- Sync completed.\n============================================\n")
+
+
+@scheduler.scheduled_job(IntervalTrigger(seconds=config.get("syncIntervalSeconds", 15 * 60)))
+def scheduled_syncs():
+    ipods = ipod_manager.get_ipods()
+    if len(ipods) > 0:
+        print("There is an iPod connected!")
+    else:
+        sync_tracks_from_plex()
 
 
 scheduler.start()

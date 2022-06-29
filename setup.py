@@ -52,7 +52,7 @@ final_config = {
     "libraryKey": library.key,
     "playlistKey": playlist.ratingKey,
     "syncIntervalSeconds": 15 * 60,
-    "syncDirectory": "/var/plex-pod/library"
+    "syncDirectory": "/var/plex-pod"
 }
 
 config_json = json.dumps(final_config, indent=2)
